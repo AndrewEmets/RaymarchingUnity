@@ -7,6 +7,7 @@ using UnityEngine;
 public class RaymarchCamera : MonoBehaviour
 {
     [SerializeField] private Shader shader;
+    [SerializeField] private float maxDistance;
 
     public Material Material
     {
@@ -47,7 +48,7 @@ public class RaymarchCamera : MonoBehaviour
 
         material.SetMatrix("_CamFrustum", CamFrustum(Camera));
         material.SetMatrix("_CamToWorld", Camera.cameraToWorldMatrix);
-        
+        material.SetFloat("_MaxDistance", maxDistance);
         RenderTexture.active = dest;
         
         GL.PushMatrix();
