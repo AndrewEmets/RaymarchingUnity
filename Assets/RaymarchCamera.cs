@@ -4,11 +4,18 @@ using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
 [ExecuteInEditMode]
-public class RaymarchCamera : MonoBehaviour
+public class RaymarchCamera : SceneViewFilter
 {
     [SerializeField] private Shader shader;
     [SerializeField] private float maxDistance;
+    [SerializeField] private Color color;
+    [SerializeField] private Vector4 sphere1, box1;
+    [SerializeField] private Vector3 modInterval;
 
+    [Header("Shadow")] [SerializeField, Range(0, 10)]
+    private float shadowIntencity;
+    [SerializeField, Range(1,300)] private float softShadowFactor;
+    
     public Material Material
     {
         get
@@ -26,6 +33,8 @@ public class RaymarchCamera : MonoBehaviour
     private Material material;
 
     private Camera camera;
+    private static readonly int shadowIntencityID = Shader.PropertyToID("_ShadowIntencity");
+
     public Camera Camera
     {
         get
@@ -49,7 +58,15 @@ public class RaymarchCamera : MonoBehaviour
         material.SetMatrix("_CamFrustum", CamFrustum(Camera));
         material.SetMatrix("_CamToWorld", Camera.cameraToWorldMatrix);
         material.SetFloat("_MaxDistance", maxDistance);
+        material.SetColor("_MainColor", color);
+        material.SetVector("Sphere1Params", sphere1);
+        material.SetVector("Box1Params", box1);
+        material.SetVector("_modInterval", modInterval);
+        material.SetFloat("_SoftShadowFactor", Mathf.Sqrt(softShadowFactor));
+        material.SetFloat(shadowIntencityID, shadowIntencity);
+        
         RenderTexture.active = dest;
+        material.mainTexture = src;
         
         GL.PushMatrix();
         GL.LoadOrtho();
