@@ -34,7 +34,10 @@
             uniform float3 _modInterval;
 
             uniform float _SoftShadowFactor;
-            uniform float _ShadowIntencity;
+            uniform float _ShadowIntencity;            
+            
+            uniform int maxIter = 300;
+            uniform float accuracy = 0.01;
 
             struct appdata
             {
@@ -74,9 +77,9 @@
                 */
                 
                 float sphere1 = sdSphere(p - Sphere1Params.xyz, Sphere1Params.w);
-                float box1 = sdRoundBox(p - Box1Params.xyz, Box1Params.w, 1.0);
+                float box1 = sdRoundBox(p - Box1Params.xyz, Box1Params.w, 0.1);
                 float plane1 = sdFloor(p);
-                float res = opU(plane1, opS(sphere1, box1));
+                float res = opU(plane1, -opSU(sphere1, -box1, 2));
                 
                 return res;
             }
@@ -133,18 +136,37 @@
                 return result;
             }
             
+            uniform float ao_stepsize;
+            uniform float ao_intencity;
+            uniform int ao_iterations;
+            
+            float AmbientOcclusion(float3 p, float3 n)
+            {
+                float ao = 0.0;
+                
+                for (int i = 1; i <= ao_iterations; i++)
+                {
+                    float dist = ao_stepsize * i;
+                    ao += max(0, (dist - signedDistance(p + n * dist)) / dist);                                        
+                }    
+                
+                return 1 - ao * ao_intencity;
+            }
+            
             fixed3 Shading(float3 p, float3 n)
             {                
-                float3 res = _LightColor0 * dot(n, _WorldSpaceLightPos0);// * unity_4LightAtten0;
-                res = saturate(res);
+                float3 color = _MainColor.rgb;
+            
+                float3 light = _LightColor0 * saturate(dot(n, _WorldSpaceLightPos0));// unity_4LightAtten0;
                 
                 float shadow = softShadow(p, _WorldSpaceLightPos0, 0.1, 50, _SoftShadowFactor) * 0.5 + 0.5;
                 shadow = pow(shadow, _ShadowIntencity);
                 
-                return res * shadow;
+                float ao = AmbientOcclusion(p, n);
+                
+                return color * light * shadow * ao;
             }
             
-            static const int maxIter = 300;
             fixed4 raymarching(float3 ro, float3 rd, float depth)
             {
                 fixed4 result = fixed4(0,0,0,0);
@@ -163,7 +185,7 @@
                     
                     float dist = signedDistance(p);
                     //float dist = length(p) - 3;
-                    if (dist <= 0.002)
+                    if (dist <= accuracy)
                     {
                         float3 n = getNormal(p);
                         

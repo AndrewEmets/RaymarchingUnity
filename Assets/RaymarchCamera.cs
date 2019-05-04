@@ -11,10 +11,18 @@ public class RaymarchCamera : SceneViewFilter
     [SerializeField] private Color color;
     [SerializeField] private Vector4 sphere1, box1;
     [SerializeField] private Vector3 modInterval;
+    [SerializeField, Range(0.001f, 0.2f)] private float accuracy = 0.01f;
+    [SerializeField, Range(32, 512)] private int maxIterations = 128;
 
     [Header("Shadow")] [SerializeField, Range(0, 10)]
     private float shadowIntencity;
     [SerializeField, Range(1,300)] private float softShadowFactor;
+
+    [Header("Ambient occlusion"), SerializeField]
+    private float ao_stepSize;
+
+    [SerializeField] private float ao_intencity;
+    [SerializeField] private int ao_steps;
     
     public Material Material
     {
@@ -64,6 +72,12 @@ public class RaymarchCamera : SceneViewFilter
         material.SetVector("_modInterval", modInterval);
         material.SetFloat("_SoftShadowFactor", Mathf.Sqrt(softShadowFactor));
         material.SetFloat(shadowIntencityID, shadowIntencity);
+        material.SetFloat("accuracy", accuracy);
+        material.SetInt("maxIter", maxIterations);
+        
+        material.SetFloat("ao_stepsize", ao_stepSize);
+        material.SetFloat("ao_intencity", ao_intencity);
+        material.SetInt("ao_iterations", ao_steps);
         
         RenderTexture.active = dest;
         material.mainTexture = src;
