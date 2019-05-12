@@ -33,6 +33,12 @@ float opU(float d1, float d2)
 	return min(d1, d2);
 }
 
+// Union
+float4 opU(float4 d1, float4 d2)
+{
+    return (d1.w < d2.w) ? d1 : d2;
+}
+
 // Subtraction
 float opS(float d1, float d2)
 {
@@ -55,6 +61,18 @@ float opSU(float d1, float d2, float k)
     float res = lerp(d1, d2, d) - m;
     
     return res;
+}
+
+float4 opSU(float4 d1, float4 d2, float k)
+{
+    float d = (d1.w - d2.w)/k + 0.5;
+    d = saturate(d);
+    
+    float m = d*(1-d)*0.5*k;
+    
+    float dist = lerp(d1.w, d2.w, d) - m;
+    float3 color = lerp (d1.rgb, d2.rgb, d);
+    return float4(color, dist);
 }
 
 // Mod Position Axis

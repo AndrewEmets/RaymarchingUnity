@@ -8,9 +8,12 @@ public class RaymarchCamera : SceneViewFilter
 {
     [SerializeField] private Shader shader;
     [SerializeField] private float maxDistance;
-    [SerializeField] private Color color;
-    [SerializeField] private Vector4 sphere1, box1;
-    [SerializeField] private Vector3 modInterval;
+    [Header("SDF"), SerializeField] private Vector4 sphere1;
+
+    [SerializeField] private float angle;
+
+    [SerializeField] private float smoothness;
+    //[SerializeField] private Vector3 modInterval;
     [SerializeField, Range(0.001f, 0.2f)] private float accuracy = 0.01f;
     [SerializeField, Range(32, 512)] private int maxIterations = 128;
 
@@ -18,11 +21,23 @@ public class RaymarchCamera : SceneViewFilter
     private float shadowIntencity;
     [SerializeField, Range(1,300)] private float softShadowFactor;
 
-    [Header("Ambient occlusion"), SerializeField]
-    private float ao_stepSize;
-
+    [Header("Ambient occlusion")]
+    [SerializeField] private float ao_stepSize;
     [SerializeField] private float ao_intencity;
     [SerializeField] private int ao_steps;
+    
+    [Header("Reflection")]
+    [SerializeField, Range(0,2)] private int reflectionCount;
+    [SerializeField, Range(0,1)] private float reflectionIntencity;
+    [SerializeField, Range(0,1)] private float envReflectionIntencity;
+    [SerializeField] private Cubemap reflectionCube;
+    
+    [Header("Colors")]
+    [SerializeField] private Color color;
+
+    [SerializeField] private Gradient sphereGradient;
+    private Color[] sphereColors;
+    [SerializeField, Range(0,4)] private float colorIntencity;
     
     public Material Material
     {
@@ -63,13 +78,19 @@ public class RaymarchCamera : SceneViewFilter
             Graphics.Blit(src, dest);
         }
 
+        if (sphereColors == null)
+            sphereColors = new Color[8];
+        for (var i = 0; i < 8; i++)
+        {
+            sphereColors[i] = sphereGradient.Evaluate(i / 8f);
+        }
+
         material.SetMatrix("_CamFrustum", CamFrustum(Camera));
         material.SetMatrix("_CamToWorld", Camera.cameraToWorldMatrix);
         material.SetFloat("_MaxDistance", maxDistance);
-        material.SetColor("_MainColor", color);
         material.SetVector("Sphere1Params", sphere1);
-        material.SetVector("Box1Params", box1);
-        material.SetVector("_modInterval", modInterval);
+        material.SetFloat("smoothSDF", smoothness);
+        material.SetFloat("angle", angle);
         material.SetFloat("_SoftShadowFactor", Mathf.Sqrt(softShadowFactor));
         material.SetFloat(shadowIntencityID, shadowIntencity);
         material.SetFloat("accuracy", accuracy);
@@ -78,6 +99,16 @@ public class RaymarchCamera : SceneViewFilter
         material.SetFloat("ao_stepsize", ao_stepSize);
         material.SetFloat("ao_intencity", ao_intencity);
         material.SetInt("ao_iterations", ao_steps);
+        
+        material.SetInt("_ReflectionCount", reflectionCount);
+        material.SetFloat("_ReflectionIntencity", reflectionIntencity);
+        material.SetFloat("_EnvReflectionIntencity", envReflectionIntencity);
+        material.SetTexture("_ReflectionCube", reflectionCube);
+        
+        material.SetColor("_GroundColor", color);
+        material.SetFloat("_ColorIntencity", colorIntencity);
+        material.SetColorArray("_SphereColors", sphereColors);
+
         
         RenderTexture.active = dest;
         material.mainTexture = src;
